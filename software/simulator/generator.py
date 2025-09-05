@@ -1,10 +1,45 @@
 # software/simulator/generator.py
 import random
 from datetime import datetime, timedelta
-import csv
 from config import AIRCRAFT_TYPES, THRESHOLDS, NUM_ZONES
 from flights import generate_flight_id, pick_aircraft, assign_zone
 from weather import generate_weather
+import mysql.connector
+
+# --- MySQL CONFIGURATION ---
+DB_USER = "root"
+DB_PASSWORD = "Shakti@2027"
+DB_HOST = "localhost"
+DB_NAME = "smartzone_r"
+
+# Connect to MySQL
+conn = mysql.connector.connect(
+    host=DB_HOST,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    database=DB_NAME
+)
+cursor = conn.cursor()
+
+# Create table if not exists
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS runway_data (
+    timestamp DATETIME,
+    flight_id VARCHAR(20),
+    aircraft VARCHAR(10),
+    zone INT,
+    rubber_mm FLOAT,
+    cracks_mm FLOAT,
+    water_mm FLOAT,
+    stress FLOAT,
+    fod_weight_g FLOAT,
+    temperature_C FLOAT,
+    humidity_pct FLOAT,
+    rain_mm FLOAT,
+    anomaly INT
+)
+""")
+conn.commit()
 
 # Initialize runway metrics per zone
 runway_metrics = {
@@ -48,7 +83,7 @@ def simulate_flight(timestamp):
     )
 
     return [
-        timestamp.isoformat(),
+        timestamp,
         flight_id,
         aircraft,
         zone,
@@ -76,14 +111,19 @@ def simulate_day(start_time=datetime(2025, 9, 5, 0, 0), interval_minutes=30):
 
 if __name__ == "__main__":
     flights_data = simulate_day()
-    header = [
-        "timestamp","flight_id","aircraft","zone",
-        "rubber_mm","cracks_mm","water_mm","stress","fod_weight_g",
-        "temperature_C","humidity_pct","rain_mm","anomaly"
-    ]
-    output_file = "../data/runway_data.csv"
-    with open(output_file, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(flights_data)
-    print(f"Runway data written to {output_file}")
+
+    # Insert into MySQL
+    insert_query = """
+    INSERT INTO runway_data (
+        timestamp, flight_id, aircraft, zone, rubber_mm, cracks_mm, water_mm,
+        stress, fod_weight_g, temperature_C, humidity_pct, rain_mm, anomaly
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+
+    for row in flights_data:
+        cursor.execute(insert_query, row)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Runway data successfully written to MySQL table 'runway_data'")
