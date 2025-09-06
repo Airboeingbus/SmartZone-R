@@ -1,32 +1,36 @@
 # software/dashboard/utils.py
-import mysql.connector
+import sqlite3
 import pandas as pd
-from mysql.connector import Error
+import os
+import streamlit as st
+
+DB_PATH = os.path.join(os.path.dirname(__file__), "../data/smartzone_r.db")
 
 def load_data():
     """
-    Connect to MySQL database and fetch runway data as a DataFrame.
-    Returns the same columns as the CSV version.
+    Load runway data.
+    1. First try to fetch from SQLite DB.
+    2. If SQLite fails, fall back to local CSV (data/runway_data.csv).
+    Returns: DataFrame
     """
+    # Try SQLite first
     try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            database='smartzone_r',
-            user='root',
-            password='Shakti@2027'  # Replace with your actual password
-        )
-        
-        if connection.is_connected():
-            cursor = connection.cursor()
-            query = "SELECT * FROM runway_data"  # Replace with your table name
-            df = pd.read_sql(query, connection)
+        if os.path.exists(DB_PATH):
+            conn = sqlite3.connect(DB_PATH)
+            df = pd.read_sql("SELECT * FROM runway_data", conn, parse_dates=["timestamp"])
+            conn.close()
+            st.sidebar.success("Data source: SQLite")
             return df
+        else:
+            raise FileNotFoundError(f"SQLite DB not found at {DB_PATH}")
 
-    except Error as e:
-        st.error(f"Error connecting to MySQL Database: {e}")
-        return pd.DataFrame()  # Return empty DataFrame on error
-        
-    finally:
-        if 'connection' in locals() and connection.is_connected():
-            cursor.close()
-            connection.close()
+    except Exception as db_error:
+        st.warning(f"SQLite connection failed. Falling back to CSV. Error: {db_error}")
+        try:
+            csv_path = os.path.join(os.path.dirname(__file__), "../data/runway_data.csv")
+            df = pd.read_csv(csv_path, parse_dates=["timestamp"])
+            st.sidebar.info("Data source: CSV")
+            return df
+        except Exception as csv_error:
+            st.error(f"Failed to load both SQLite DB and CSV: {csv_error}")
+            return pd.DataFrame()

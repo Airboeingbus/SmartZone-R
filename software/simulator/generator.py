@@ -4,39 +4,47 @@ from datetime import datetime, timedelta
 from config import AIRCRAFT_TYPES, THRESHOLDS, NUM_ZONES
 from flights import generate_flight_id, pick_aircraft, assign_zone
 from weather import generate_weather
-import mysql.connector
+import sqlite3
+import os
 
-# --- MySQL CONFIGURATION ---
-DB_USER = "root"
-DB_PASSWORD = "Shakti@2027"
-DB_HOST = "localhost"
-DB_NAME = "smartzone_r"
+# --- SQLite CONFIGURATION ---
+DB_DIR = os.path.join(os.path.dirname(__file__), "../data")
+DB_PATH = os.path.join(DB_DIR, "smartzone_r.db")
 
-# Connect to MySQL
-conn = mysql.connector.connect(
-    host=DB_HOST,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    database=DB_NAME
-)
+# Create data directory if it doesn't exist
+if not os.path.exists(DB_DIR):
+    os.makedirs(DB_DIR)
+
+# If database is corrupted, remove it
+if os.path.exists(DB_PATH):
+    try:
+        # Test if database is valid
+        test_conn = sqlite3.connect(DB_PATH)
+        test_conn.close()
+    except sqlite3.DatabaseError:
+        os.remove(DB_PATH)
+        print(f"Removed corrupted database at '{DB_PATH}'")
+
+# Connect to SQLite (will create new db if doesn't exist)
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
 # Create table if not exists
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS runway_data (
-    timestamp DATETIME,
-    flight_id VARCHAR(20),
-    aircraft VARCHAR(10),
-    zone INT,
-    rubber_mm FLOAT,
-    cracks_mm FLOAT,
-    water_mm FLOAT,
-    stress FLOAT,
-    fod_weight_g FLOAT,
-    temperature_C FLOAT,
-    humidity_pct FLOAT,
-    rain_mm FLOAT,
-    anomaly INT
+    timestamp TEXT,
+    flight_id TEXT,
+    aircraft TEXT,
+    zone INTEGER,
+    rubber_mm REAL,
+    cracks_mm REAL,
+    water_mm REAL,
+    stress REAL,
+    fod_weight_g REAL,
+    temperature_C REAL,
+    humidity_pct REAL,
+    rain_mm REAL,
+    anomaly INTEGER
 )
 """)
 conn.commit()
@@ -82,8 +90,8 @@ def simulate_flight(timestamp):
         or metrics["fod_weight_g"] > THRESHOLDS["fod_weight_g"]
     )
 
-    return [
-        timestamp,
+    return (
+        timestamp.isoformat(),
         flight_id,
         aircraft,
         zone,
@@ -95,8 +103,8 @@ def simulate_flight(timestamp):
         round(weather["temperature_C"], 2),
         round(weather["humidity_pct"], 2),
         round(weather["rain_mm"], 2),
-        int(anomaly),
-    ]
+        int(anomaly)
+    )
 
 def simulate_day(start_time=datetime(2025, 9, 5, 0, 0), interval_minutes=30):
     flights = []
@@ -112,18 +120,16 @@ def simulate_day(start_time=datetime(2025, 9, 5, 0, 0), interval_minutes=30):
 if __name__ == "__main__":
     flights_data = simulate_day()
 
-    # Insert into MySQL
+    # Insert into SQLite
     insert_query = """
     INSERT INTO runway_data (
         timestamp, flight_id, aircraft, zone, rubber_mm, cracks_mm, water_mm,
         stress, fod_weight_g, temperature_C, humidity_pct, rain_mm, anomaly
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
 
-    for row in flights_data:
-        cursor.execute(insert_query, row)
-
+    cursor.executemany(insert_query, flights_data)
     conn.commit()
     cursor.close()
     conn.close()
-    print("Runway data successfully written to MySQL table 'runway_data'")
+    print(f"Runway data successfully written to SQLite DB at '{DB_PATH}'")
