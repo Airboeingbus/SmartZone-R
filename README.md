@@ -39,4 +39,112 @@ SmartZone-R is a Streamlit-based dashboard designed to monitor runway surface co
 ## Getting Started
 
 ### Repository Structure
-Smartzone-R_Project/ ├── hardware/                     # Hardware-related resources │   ├── esp32/ │   │   └── sample.txt │   ├── wokwi/ │   │   └── sample.txt │   └── sample.txt │ ├── software/                     # Main software stack │   ├── analytics/                # Data analytics scripts │   │   ├── analyzer.py │   │   └── test_db.py │   │ │   ├── dashboard/                # Streamlit dashboard │   │   ├── pages/                # Multi-page Streamlit apps │   │   │   ├── alerts.py │   │   │   ├── analytics.py │   │   │   ├── runway_maps.py │   │   │   └── init.py │   │   ├── app.py │   │   ├── utils.py │   │   └── init.py │   │ │   ├── data/                     # Datasets │   │   ├── runway_data.csv │   │   └── smartzone_r.db │   │ │   └── simulator/                # Simulation engine │       ├── config.py │       ├── flights.py │       ├── generator.py │       ├── weather.py │       └── pycache/          # Auto-generated Python cache │ ├── tests/                        # Unit and integration tests │   └── test_generator.py │ ├── requirements.txt              # Python dependencies └── repo_tree.txt                 # Generated repo tree
+.
+├── ## Repository Structure
+└── Smartzone-R_Project/
+    ├── hardware/
+    │   ├── esp32/
+    │   │   └── sample.txt
+    │   ├── wokwi/
+    │   │   └── sample.txt
+    │   └── sample.txt
+    ├── software/
+    │   ├── analytics/
+    │   │   ├── analyzer.py
+    │   │   └── test_db.py
+    │   ├── dashboard/
+    │   │   ├── pages/
+    │   │   │   ├── alerts.py
+    │   │   │   ├── analytics.py
+    │   │   │   ├── runway_maps.py
+    │   │   │   └── __init__.py
+    │   │   ├── app.py
+    │   │   ├── utils.py
+    │   │   └── __init__.py
+    │   ├── data/
+    │   │   ├── runway_data.csv
+    │   │   └── smartzone_r.db
+    │   └── simulator/
+    │       ├── config.py
+    │       ├── flights.py
+    │       ├── generator.py
+    │       └── weather.py
+    ├── tests/
+    │   └── test_generator.py
+    ├── requirements.txt
+    └── repo_tree.txt
+    ---
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/Smartzone-R_Project.git
+   cd Smartzone-R_Project
+2. (Optional but recommended) Create a virtual environment:
+
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+
+
+3. Install dependencies:
+
+pip install -r requirements.txt
+
+
+
+
+---
+
+## Usage
+
+Run the Streamlit Dashboard
+
+cd software/dashboard
+streamlit run app.py
+
+The dashboard will be available at:
+
+http://localhost:8501
+
+
+---
+
+## Testing
+
+Run tests using:
+
+pytest tests/
+
+
+---
+
+## Contributing
+
+Contributions are welcome!
+To contribute:
+
+1. Fork the repository
+
+
+2. Create a feature branch (git checkout -b feature-name)
+
+
+3. Commit your changes (git commit -m "Add new feature")
+
+
+4. Push to your branch (git push origin feature-name)
+
+
+5. Open a pull request
+
+
+
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+See the LICENSE file for details.
