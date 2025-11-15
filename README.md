@@ -244,21 +244,6 @@ pytest tests/
 
 ---
 
-## 🛣️ Roadmap
-
-- [x] Core dashboard functionality
-- [x] Multi-zone simulation
-- [x] Alert system with severity levels
-- [x] Data export capabilities
-- [ ] Machine learning predictive maintenance
-- [ ] Mobile application for field inspections
-- [ ] Integration with weather APIs
-- [ ] Multi-airport support
-- [ ] Real-time hardware sensor integration
-- [ ] Email/SMS alert notifications
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions from the community! Here's how you can help:
