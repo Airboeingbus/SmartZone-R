@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartZone-R — Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    .live-flight-board { height: 300px; }
+    .zone-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; height: 300px; overflow-y: auto; }
+    .zone-card { border: 2px solid #3a3820; background: #1f1f12; padding: 8px; text-align: center; }
+    .zone-card.critical { border-color: #ff2200; }
+    .zone-number { color: #c8a800; font-size: 20px; font-weight: 700; }
+    .zone-stress { color: #a09870; font-size: 10px; }
+    .zone-value { color: #c8a800; font-size: 14px; margin-top: 2px; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .chart-box { border: 2px solid #3a3820; background: #1f1f12; padding: 8px; }
+    .chart-box canvas { max-height: 180px; }
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .user-info { font-size: 11px; color: #7ab800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .logout-btn { padding: 6px 12px; border: 2px solid #c8a800; background: transparent; color: #c8a800; font-family: 'B612 Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .logout-btn:hover { background: #c8a800; color: #1a1a0e; }
+  </style>
+  <script>
+    // Auth guard - redirect to login if no token
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = sessionStorage.getItem('auth_token');
+      if (!token) {
+        window.location.href = '/login';
+      }
+    });
+  </script>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-title">SMARTZONE-R</div>
+      <div class="header-airport" id="airport-code">--</div>
+      <span class="header-recording">●</span>
+      <span style="font-size: 10px; color: #a09870;">REC</span>
+    </div>
+    <div class="header-time" id="header-time">14:32:05</div>
+    <div class="header-right">
+      <div class="user-info">
+        <span id="user-role">VIEWER</span> • <span id="user-name">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-title">MENU</div>
+    <ul class="sidebar-nav">
+      <li><a href="index.html" class="nav-item active">HOME</a></li>
+      <li><a href="runway.html" class="nav-item">RUNWAY</a></li>
+      <li><a href="alerts.html" class="nav-item">ALERTS</a></li>
+      <li><a href="analytics.html" class="nav-item">ANALYTICS</a></li>
+    </ul>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <!-- PANEL 1: SYSTEM STATUS KPIs -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">SYSTEM STATUS</span></div>
+      <div class="panel-content">
+        <div class="grid grid-4col">
+          <div class="kpi-box">
+            <div class="kpi-label">FLIGHTS</div>
+            <div class="kpi-value" id="kpi-flights">048</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">ALERTS</div>
+            <div class="kpi-value status-critical" id="kpi-alerts">003</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">WORST ZONE</div>
+            <div class="kpi-value" id="kpi-worst">07</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">AVG STRESS</div>
+            <div class="kpi-value" id="kpi-stress">72.4</div>
+            <div style="font-size: 9px; color: #a09870; margin-top: 4px;">%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 2: DB STATUS ROW -->
+    <div class="panel">
+      <div class="panel-content" style="padding: 4px; display: flex; justify-content: space-between; font-size: 11px;">
+        <span><span style="color: #7ab800;">●</span> DB: OK</span>
+        <span>LAST UPDATE: <span id="last-update">14:31:42</span></span>
+        <span>ZONES: <span style="color: #c8a800;">10</span></span>
+        <span>RECORDS: <span style="color: #c8a800;" id="record-count">2,847</span></span>
+      </div>
+    </div>
+
+    <!-- PANEL 3: TWO-COLUMN LAYOUT -->
+    <div class="grid grid-2col" style="flex: 1;">
+      <!-- LEFT: LIVE FLIGHT LOG -->
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">LIVE FLIGHT LOG</span></div>
+        <div class="panel-content" style="padding: 0; overflow: hidden;">
+          <table style="height: 100%; border: none;">
+            <thead>
+              <tr>
+                <th>TIME</th>
+                <th>FLTID</th>
+                <th>ACFT</th>
+                <th>ZONE</th>
+                <th>STRESS</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="flights-table">
+              <tr><td colspan="6" style="text-align: center; padding: 12px;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: ZONE STATUS GRID -->
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">ZONE STATUS</span></div>
+        <div class="panel-content" style="padding: 8px;">
+          <div class="zone-grid" id="zone-grid">
+            <!-- Dynamically filled -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 4: THREE CHARTS -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px;">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">STRESS TREND</span></div>
+        <div class="panel-content">
+          <canvas id="stress-chart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">ALERT DISTRIBUTION</span></div>
+        <div class="panel-content">
+          <canvas id="alerts-chart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">RUBBER DEPTH</span></div>
+        <div class="panel-content">
+          <canvas id="rubber-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-keys">
+      <span class="footer-key">[F1:HELP]</span>
+      <span class="footer-key">[F2:RFSH]</span>
+      <span class="footer-key">[F3:EXPRT]</span>
+      <span class="footer-key">[F5:ALRTS]</span>
+      <span class="footer-key">[F9:LOGOUT]</span>
+    </div>
+    <div class="footer-status">
+      <span class="status-item"><span class="status-indicator ok"></span>DB: OK</span>
+      <span class="status-item"><span style="color: #a09870;">48R ACTIVE</span></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import * as api from './js/api.js';
+    import * as charts from './js/charts.js';
+
+    // Update time
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('header-time').textContent = 
+        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }, 1000);
+
+    // Load flight data
+    async function loadData() {
+      try {
+        const flights = await api.fetchFlights() || [];
+        const status = await api.fetchStatus();
+        const zones = await api.fetchZones() || [];
+
+        // Update airport code in header (from env variable)
+        const airportCodeEl = document.getElementById('airport-code');
+        if (airportCodeEl && status?.airport_code) {
+          airportCodeEl.textContent = status.airport_code.toUpperCase();
+        }
+
+        // Update KPIs
+        document.getElementById('kpi-flights').textContent = String(flights.length).padStart(3, '0');
+        document.getElementById('kpi-worst').textContent = String(status?.total_zones || 0).padStart(2, '0');
+        document.getElementById('kpi-stress').textContent = ((flights.length > 0 ? flights.reduce((sum, f) => sum + f.stress, 0) / flights.length : 0).toFixed(1));
+        document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+
+        // Flight table
+        const tbody = document.getElementById('flights-table');
+        tbody.innerHTML = flights.slice(0, 15).map(f => `
+          <tr>
+            <td>${new Date(f.timestamp).toLocaleTimeString().slice(0, 5)}</td>
+            <td>${f.flight_id}</td>
+            <td>${f.aircraft}</td>
+            <td>${String(f.zone).padStart(2, '0')}</td>
+            <td>${f.stress.toFixed(0)}</td>
+            <td class="${f.stress > 85 ? 'status-critical' : f.stress > 70 ? 'status-high' : 'status-normal'}">${f.stress > 85 ? 'CRIT' : f.stress > 70 ? 'HIGH' : 'OK'}</td>
+          </tr>
+        `).join('');
+
+        // Zone grid
+        const zoneDiv = document.getElementById('zone-grid');
+        zoneDiv.innerHTML = zones.map(z => `
+          <div class="zone-card ${z.status === 'critical' ? 'critical' : ''}">
+            <div class="zone-number">${String(z.zone).padStart(2, '0')}</div>
+            <div class="zone-stress">STRESS</div>
+            <div class="zone-value">${z.avg_stress.toFixed(1)}%</div>
+          </div>
+        `).join('');
+
+        // Charts
+        const stressData = await api.fetchTimeSeries('stress');
+        if (stressData) charts.buildStressTimeChart('stress-chart', stressData);
+
+        // Alert severity pie chart
+        const alertSummary = await api.fetchAlertsSummary();
+        if (alertSummary) charts.buildAlertSeverityPie('alerts-chart', alertSummary);
+
+        // Rubber depth chart - use zone data
+        if (zones && zones.length > 0) {
+          const rubberData = {
+            labels: zones.map(z => `Zone ${String(z.zone).padStart(2, '0')}`),
+            data: zones.map(z => z.avg_rubber)
+          };
+          charts.buildRubberDepthChart('rubber-chart', rubberData);
+        }
+
+
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 15000);
+
+    // Load user info from session
+    function loadUserInfo() {
+      const username = sessionStorage.getItem('auth_username') || 'User';
+      const role = sessionStorage.getItem('auth_role') || 'viewer';
+      document.getElementById('user-name').textContent = username.toUpperCase();
+      document.getElementById('user-role').textContent = role.toUpperCase();
+    }
+
+    // Logout function
+    function logout() {
+      if (confirm('Log out of SmartZone-R?')) {
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_username');
+        sessionStorage.removeItem('auth_role');
+        window.location.href = '/login';
+      }
+    }
+
+    loadUserInfo();
+  </script>
+  <script src="js/realtime.js"></script>
+</body>
+</html>

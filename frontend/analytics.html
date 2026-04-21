@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartZone-R — Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .user-info { font-size: 11px; color: #7ab800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .logout-btn { padding: 6px 12px; border: 2px solid #c8a800; background: transparent; color: #c8a800; font-family: 'B612 Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .logout-btn:hover { background: #c8a800; color: #1a1a0e; }
+    .analytics-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .filter-input { border: 2px solid #3a3820; background: #0e0e06; padding: 4px 8px; color: #c8a800; font-family: 'B612 Mono'; width: 150px; }
+    .chart-panel { border: 2px solid #3a3820; background: #1f1f12; padding: 8px; }
+    .risk-matrix { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .risk-matrix th, .risk-matrix td { border: 1px solid #2a2820; padding: 4px 8px; text-align: right; font-size: 11px; }
+    .risk-matrix th { background: #141408; color: #c8a800; }
+    .risk-high { color: #ff2200; font-weight: 700; }
+    .risk-med { color: #ff6600; }
+  </style>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = sessionStorage.getItem('auth_token');
+      if (!token) window.location.href = '/login';
+    });
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="header-title">SMARTZONE-R</div>
+      <div class="header-airport" id="airport-code">--</div>
+      <span class="header-recording">●</span>
+      <span style="font-size: 10px; color: #a09870;">REC</span>
+    </div>
+    <div class="header-time" id="header-time">14:32:05</div>
+    <div class="header-right">
+      <div class="user-info">
+        <span id="user-role">VIEWER</span> • <span id="user-name">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <nav class="sidebar">
+    <div class="sidebar-title">MENU</div>
+    <ul class="sidebar-nav">
+      <li><a href="index.html" class="nav-item">HOME</a></li>
+      <li><a href="runway.html" class="nav-item">RUNWAY</a></li>
+      <li><a href="alerts.html" class="nav-item">ALERTS</a></li>
+      <li><a href="analytics.html" class="nav-item active">ANALYTICS</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <!-- ANALYTICS KPIs -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">ANALYTICS SUMMARY</span></div>
+      <div class="panel-content">
+        <div class="analytics-kpis">
+          <div class="kpi-box">
+            <div class="kpi-label">FLIGHTS</div>
+            <div class="kpi-value" id="kpi-flights">0</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">ANOMALIES</div>
+            <div class="kpi-value" id="kpi-anomaly">0.0</div>
+            <div style="font-size: 9px; color: #a09870;">%</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">WORST ZONE</div>
+            <div class="kpi-value" id="kpi-worst">--</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">AVG STRESS</div>
+            <div class="kpi-value" id="kpi-stress">--</div>
+            <div style="font-size: 9px; color: #a09870;">%</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">AVG RUBBER</div>
+            <div class="kpi-value" id="kpi-rubber">--</div>
+            <div style="font-size: 9px; color: #a09870;">MM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">FILTERS</span></div>
+      <div class="panel-content">
+        <div class="filter-bar">
+          <label style="color: #a09870; font-size: 11px;">ZONE:</label>
+          <select class="filter-input" style="width: 80px;">
+            <option>ALL</option>
+            <option>Z01</option>
+            <option>Z02</option>
+            <option>Z03</option>
+          </select>
+          <label style="color: #a09870; font-size: 11px; margin-left: 12px;">AIRCRAFT:</label>
+          <select class="filter-input" style="width: 100px;">
+            <option>ALL</option>
+            <option>B777</option>
+            <option>A320</option>
+            <option>B787</option>
+          </select>
+          <button onclick="applyFilters()" style="margin-left: auto; padding: 4px 12px; border: 2px solid #c8a800; background: transparent; color: #c8a800; cursor: pointer;">APPLY</button>
+          <button onclick="exportToCSV()" style="padding: 4px 12px; border: 2px solid #3a3820; background: transparent; color: #a09870; cursor: pointer;">EXPORT CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LARGE CHARTS -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">STRESS TREND (24H)</span></div>
+        <div class="panel-content">
+          <canvas id="stress-line-chart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">RUBBER DEPTH (24H)</span></div>
+        <div class="panel-content">
+          <canvas id="rubber-line-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREE CHARTS -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">AIRCRAFT IMPACT</span></div>
+        <div class="panel-content"><canvas id="aircraft-chart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">FOD TREND</span></div>
+        <div class="panel-content"><canvas id="fod-chart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">ANOMALIES</span></div>
+        <div class="panel-content"><canvas id="anomaly-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- RISK MATRIX TABLE -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">ZONE × METRIC RISK MATRIX</span></div>
+      <div class="panel-content" style="padding: 0; overflow-x: auto;">
+        <table class="risk-matrix">
+          <thead>
+            <tr>
+              <th>ZONE</th>
+              <th>STRESS</th>
+              <th>RUBBER</th>
+              <th>CRACKS</th>
+              <th>WATER</th>
+              <th>FOD</th>
+              <th>RISK</th>
+            </tr>
+          </thead>
+          <tbody id="risk-table">
+            <tr><td colspan="7" style="text-align: center; padding: 12px;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-keys">
+      <span class="footer-key">[F1:HELP]</span>
+      <span class="footer-key">[F2:RFSH]</span>
+      <span class="footer-key">[F3:EXPRT]</span>
+      <span class="footer-key">[F5:ALRTS]</span>
+      <span class="footer-key">[F9:LOGOUT]</span>
+    </div>
+    <div class="footer-status">
+      <span class="status-item"><span class="status-indicator ok"></span>DB: OK</span>
+      <span class="status-item"><span style="color: #a09870;">ANALYSIS READY</span></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import * as api from './js/api.js';
+    import * as charts from './js/charts.js';
+
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('header-time').textContent = 
+        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }, 1000);
+
+    async function loadAirportCode() {
+      try {
+        const status = await api.fetchStatus();
+        if (status?.airport_code) {
+          document.getElementById('airport-code').textContent = status.airport_code.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error loading airport code:', error);
+      }
+    }
+
+    window.applyFilters = function() {
+      const zone = document.querySelector('select').value;
+      if (zone === 'ALL') {
+        loadAnalytics();
+      } else {
+        alert(`Filter by ${zone} not yet implemented. Showing all zones.`);
+        loadAnalytics();
+      }
+    };
+
+    window.exportToCSV = async function() {
+      try {
+        const flights = await api.fetchFlights() || [];
+        if (flights.length === 0) {
+          alert('No data to export');
+          return;
+        }
+
+        let csv = 'Time,Flight ID,Aircraft,Zone,Stress,Rubber,Cracks,Water,FOD,Status\n';
+        flights.forEach(f => {
+          const status = f.stress > 85 ? 'CRITICAL' : f.stress > 70 ? 'HIGH' : 'OK';
+          csv += `${f.timestamp},${f.flight_id},${f.aircraft},${f.zone},${f.stress.toFixed(1)},${f.rubber_mm.toFixed(1)},${f.cracks_mm.toFixed(1)},${f.water_mm.toFixed(1)},${f.fod_weight_g.toFixed(2)},${status}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `smartzone_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (error) {
+        console.error('Error exporting CSV:', error);
+        alert('Error exporting data');
+      }
+    };
+
+    async function loadAnalytics() {
+      try {
+        const summary = await api.fetchAnalyticsSummary();
+        const zones = await api.fetchZones() || [];
+        const flights = await api.fetchFlights() || [];
+
+        if (summary) {
+          document.getElementById('kpi-flights').textContent = summary.total_flights;
+          document.getElementById('kpi-anomaly').textContent = summary.anomaly_rate.toFixed(1);
+          document.getElementById('kpi-worst').textContent = String(summary.worst_zone).padStart(2, '0');
+          document.getElementById('kpi-stress').textContent = summary.avg_stress.toFixed(1);
+          document.getElementById('kpi-rubber').textContent = summary.avg_rubber.toFixed(1);
+        }
+
+        // Risk Matrix
+        const tbody = document.getElementById('risk-table');
+        tbody.innerHTML = zones.map(z => `
+          <tr>
+            <td><strong>${String(z.zone).padStart(2, '0')}</strong></td>
+            <td class="${z.avg_stress > 85 ? 'risk-high' : z.avg_stress > 70 ? 'risk-med' : ''}">${z.avg_stress.toFixed(0)}</td>
+            <td class="${z.avg_rubber > 5 ? 'risk-high' : z.avg_rubber > 3 ? 'risk-med' : ''}">${z.avg_rubber.toFixed(1)}</td>
+            <td>${z.avg_cracks.toFixed(1)}</td>
+            <td>${z.avg_water.toFixed(1)}</td>
+            <td>${z.avg_fod.toFixed(0)}</td>
+            <td style="font-weight: 700; ${z.status === 'critical' ? 'color: #ff2200;' : z.status === 'high' ? 'color: #ff6600;' : ''}">${z.status.toUpperCase()}</td>
+          </tr>
+        `).join('');
+
+        // Charts
+        const stressData = await api.fetchTimeSeries('stress');
+        const rubberData = await api.fetchTimeSeries('rubber_mm');
+        
+        if (stressData) charts.buildStressTimeChart('stress-line-chart', stressData);
+        if (rubberData) charts.buildRubberDepthChart('rubber-line-chart', rubberData);
+
+        // Aircraft impact chart (using zone data)
+        if (zones && zones.length > 0) {
+          const aircraftData = {
+            labels: zones.map(z => `Zone ${String(z.zone).padStart(2, '0')}`),
+            data: zones.map(z => z.flight_count)
+          };
+          charts.buildAircraftImpactChart('aircraft-chart', aircraftData);
+        }
+
+        // FOD trend chart
+        const fodData = await api.fetchTimeSeries('fod_weight_g');
+        if (fodData) charts.buildFODTrendChart('fod-chart', fodData);
+
+        // Anomalies chart
+        if (summary) {
+          const anomalyData = {
+            labels: ['Anomalies', 'Normal'],
+            data: [
+              Math.round(summary.anomaly_rate),
+              Math.round(100 - summary.anomaly_rate)
+            ]
+          };
+          charts.buildAlertSeverityPie('anomaly-chart', { 
+            critical: Math.round(summary.anomaly_rate),
+            high: 0,
+            medium: 0,
+            normal: Math.round(100 - summary.anomaly_rate),
+            total: 100
+          });
+        }
+
+
+      } catch (error) {
+        console.error('Error loading analytics:', error);
+      }
+    }
+
+    loadAirportCode();
+    loadAnalytics();
+    setInterval(loadAnalytics, 15000);
+
+    // Load user info
+    function loadUserInfo() {
+      const username = sessionStorage.getItem('auth_username') || 'User';
+      const role = sessionStorage.getItem('auth_role') || 'viewer';
+      document.getElementById('user-name').textContent = username.toUpperCase();
+      document.getElementById('user-role').textContent = role.toUpperCase();
+    }
+
+    // Logout function
+    function logout() {
+      if (confirm('Log out of SmartZone-R?')) {
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_username');
+        sessionStorage.removeItem('auth_role');
+        window.location.href = '/login';
+      }
+    }
+
+    loadUserInfo();
+  </script>
+  <script src="js/realtime.js"></script>
+</body>
+</html>

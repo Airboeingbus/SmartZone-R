@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMARTZONE-R | LOGIN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'B612 Mono', monospace;
+            background: #1a1a0e;
+            color: #c8a800;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .auth-banner {
+            border: 2px solid #c8a800;
+            padding: 20px;
+            margin-bottom: 40px;
+            text-align: center;
+            background: rgba(200, 168, 0, 0.05);
+        }
+
+        .auth-banner h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .auth-banner .subtitle {
+            font-size: 12px;
+            color: #7ab800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .login-form {
+            border: 2px solid #c8a800;
+            padding: 30px;
+            background: #0a0a08;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            color: #c8a800;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #c8a800;
+            background: #1a1a0e;
+            color: #c8a800;
+            font-family: 'JetBrains Mono', 'B612 Mono', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #7ab800;
+            box-shadow: 0 0 8px rgba(122, 184, 0, 0.3);
+            background: #0f0f0c;
+        }
+
+        input::placeholder {
+            color: #7ab800;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #c8a800;
+            background: #c8a800;
+            color: #1a1a0e;
+            font-family: 'JetBrains Mono', 'B612 Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .login-btn:hover {
+            background: #7ab800;
+            border-color: #7ab800;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border: 2px solid #ff3333;
+            background: rgba(255, 51, 51, 0.1);
+            color: #ff3333;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: blink 0.5s;
+        }
+
+
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+            color: #7ab800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(3, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Auth Banner -->
+        <div class="auth-banner">
+            <h1>⚠️ AUTHORIZED PERSONNEL ONLY ⚠️</h1>
+            <div class="subtitle">SmartZone-R Runway Monitoring System</div>
+        </div>
+
+        <!-- Login Form -->
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="username">USERNAME</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Enter username"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">PASSWORD</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Enter password"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="loading" id="loadingIndicator"></div>
+        </form>
+    </div>
+
+    <script>
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = sessionStorage.getItem('auth_token');
+            if (token) {
+                // Verify token is still valid
+                fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Redirect to home
+                        window.location.href = 'index_new.html';
+                    } else {
+                        // Clear invalid token
+                        sessionStorage.removeItem('auth_token');
+                        sessionStorage.removeItem('auth_role');
+                        sessionStorage.removeItem('auth_username');
+                    }
+                })
+                .catch(() => {
+                    // Clear token on error
+                    sessionStorage.removeItem('auth_token');
+                });
+            }
+        });
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+            const loadingInd = document.getElementById('loadingIndicator');
+            const loginBtn = document.getElementById('loginBtn');
+
+            // Clear previous error
+            errorMsg.classList.remove('show');
+            errorMsg.textContent = '';
+
+            // Show loading
+            loadingInd.classList.add('show');
+            loginBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Login failed');
+                }
+
+                const data = await response.json();
+
+                // Store token and user info in sessionStorage
+                sessionStorage.setItem('auth_token', data.access_token);
+                sessionStorage.setItem('auth_role', data.role);
+                sessionStorage.setItem('auth_username', data.username);
+                sessionStorage.setItem('auth_expires_at', 
+                    new Date(Date.now() + data.expires_in * 1000).toISOString()
+                );
+
+                // Redirect to home page
+                window.location.href = 'index_new.html';
+
+            } catch (err) {
+                errorMsg.textContent = 'ACCESS DENIED - ' + err.message.toUpperCase();
+                errorMsg.classList.add('show');
+            } finally {
+                loadingInd.classList.remove('show');
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Clear password on blur
+        document.getElementById('password').addEventListener('blur', function() {
+            // Don't clear for UX, but could implement if desired
+        });
+    </script>
+</body>
+</html>

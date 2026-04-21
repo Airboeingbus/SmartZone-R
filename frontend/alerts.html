@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartZone-R — Alerts</title>
+  <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .user-info { font-size: 11px; color: #7ab800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .logout-btn { padding: 6px 12px; border: 2px solid #c8a800; background: transparent; color: #c8a800; font-family: 'B612 Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .logout-btn:hover { background: #c8a800; color: #1a1a0e; }
+    .alert-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
+    .threshold-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #2a2820; }
+    .threshold-label { min-width: 100px; color: #a09870; font-size: 11px; text-transform: uppercase; }
+    .threshold-input { width: 80px; border: 2px solid #3a3820; background: #0e0e06; padding: 4px; color: #c8a800; font-family: 'B612 Mono'; }
+    .threshold-unit { color: #a09870; font-size: 10px; }
+  </style>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = sessionStorage.getItem('auth_token');
+      if (!token) window.location.href = '/login';
+    });
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="header-title">SMARTZONE-R</div>
+      <div class="header-airport" id="airport-code">--</div>
+      <span class="header-recording">●</span>
+      <span style="font-size: 10px; color: #a09870;">REC</span>
+    </div>
+    <div class="header-time" id="header-time">14:32:05</div>
+    <div class="header-right">
+      <div class="user-info">
+        <span id="user-role">VIEWER</span> • <span id="user-name">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <nav class="sidebar">
+    <div class="sidebar-title">MENU</div>
+    <ul class="sidebar-nav">
+      <li><a href="index.html" class="nav-item">HOME</a></li>
+      <li><a href="runway.html" class="nav-item">RUNWAY</a></li>
+      <li><a href="alerts.html" class="nav-item active">ALERTS</a></li>
+      <li><a href="analytics.html" class="nav-item">ANALYTICS</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <!-- ALERT KPIs -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">ALERT SUMMARY</span></div>
+      <div class="panel-content">
+        <div class="alert-kpis">
+          <div class="kpi-box critical">
+            <div class="kpi-label">CRITICAL</div>
+            <div class="kpi-value" id="kpi-crit">0</div>
+          </div>
+          <div class="kpi-box" style="border-color: #ff6600;">
+            <div class="kpi-label">HIGH</div>
+            <div class="kpi-value" id="kpi-high" style="color: #ff6600;">0</div>
+          </div>
+          <div class="kpi-box" style="border-color: #c8a800;">
+            <div class="kpi-label">MEDIUM</div>
+            <div class="kpi-value" id="kpi-med" style="color: #c8a800;">0</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">TOTAL</div>
+            <div class="kpi-value" id="kpi-total">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THRESHOLDS -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">THRESHOLD CONFIGURATION</span></div>
+      <div class="panel-content">
+        <div class="threshold-row">
+          <div class="threshold-label">STRESS</div>
+          <input type="number" class="threshold-input" value="85" min="0" max="100">
+          <span class="threshold-unit">% MAX</span>
+          <button onclick="applyThresholds()" style="margin-left: auto; padding: 4px 12px; border: 2px solid #c8a800; background: transparent; color: #c8a800; cursor: pointer;">APPLY</button>
+        </div>
+        <div class="threshold-row">
+          <div class="threshold-label">RUBBER</div>
+          <input type="number" class="threshold-input" value="5" min="0" max="20">
+          <span class="threshold-unit">MM</span>
+        </div>
+        <div class="threshold-row">
+          <div class="threshold-label">CRACKS</div>
+          <input type="number" class="threshold-input" value="10" min="0" max="50">
+          <span class="threshold-unit">MM</span>
+        </div>
+        <div class="threshold-row">
+          <div class="threshold-label">WATER</div>
+          <input type="number" class="threshold-input" value="3" min="0" max="20">
+          <span class="threshold-unit">MM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS TABLE & CHARTS -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1;">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">ALERT DISTRIBUTION</span></div>
+        <div class="panel-content">
+          <canvas id="alert-pie-chart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">ALERTS BY ZONE</span></div>
+        <div class="panel-content">
+          <canvas id="alert-zone-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS TABLE -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">ACTIVE ALERTS</span></div>
+      <div class="panel-content" style="padding: 0; overflow: hidden;">
+        <table style="border: none;">
+          <thead>
+            <tr>
+              <th>TIME</th>
+              <th>ZONE</th>
+              <th>FLTID</th>
+              <th>SEVERITY</th>
+              <th>REASON</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-table">
+            <tr><td colspan="5" style="text-align: center; padding: 12px;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MAINTENANCE REPORT -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">MAINTENANCE REPORT</span></div>
+      <div class="panel-content">
+        <button onclick="generateReport()" style="padding: 6px 16px; border: 2px solid #c8a800; background: transparent; color: #c8a800; cursor: pointer; margin-bottom: 8px;">GENERATE REPORT</button>
+        <div id="report-area" style="border: 2px solid #3a3820; background: #0e0e06; padding: 8px; font-size: 10px; line-height: 1.6; color: #c8a800; font-family: 'B612 Mono'; display: none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-keys">
+      <span class="footer-key">[F1:HELP]</span>
+      <span class="footer-key">[F2:RFSH]</span>
+      <span class="footer-key">[F3:EXPRT]</span>
+      <span class="footer-key">[F5:ALRTS]</span>
+      <span class="footer-key">[F9:LOGOUT]</span>
+    </div>
+    <div class="footer-status">
+      <span class="status-item"><span class="status-indicator ok"></span>DB: OK</span>
+      <span class="status-item"><span style="color: #a09870;" id="alert-count">0 ACTIVE</span></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import * as api from './js/api.js';
+    import * as charts from './js/charts.js';
+
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('header-time').textContent = 
+        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }, 1000);
+
+    async function loadAlerts() {
+      try {
+        const alerts = await api.fetchAlerts() || [];
+        const summary = await api.fetchAlertsSummary();
+        const alertsByZone = await api.fetchAlertsByZone();
+
+        if (summary) {
+          document.getElementById('kpi-crit').textContent = summary.critical;
+          document.getElementById('kpi-high').textContent = summary.high;
+          document.getElementById('kpi-med').textContent = summary.medium;
+          document.getElementById('kpi-total').textContent = summary.total;
+          document.getElementById('alert-count').textContent = summary.critical + ' CRITICAL';
+        }
+
+        const tbody = document.getElementById('alerts-table');
+        tbody.innerHTML = alerts.slice(0, 20).map(a => `
+          <tr class="status-${a.severity}">
+            <td>${new Date(a.timestamp).toLocaleTimeString().slice(0, 5)}</td>
+            <td>${String(a.zone).padStart(2, '0')}</td>
+            <td>${a.flight_id}</td>
+            <td style="color: ${a.severity === 'critical' ? '#ff2200' : a.severity === 'high' ? '#ff6600' : '#c8a800'}; font-weight: 700;">${a.severity.toUpperCase()}</td>
+            <td>${a.reasons[0] || ''}</td>
+          </tr>
+        `).join('');
+
+        if (summary) {
+          charts.buildAlertSeverityPie('alert-pie-chart', summary);
+        }
+
+        // Build alerts by zone bar chart
+        if (alertsByZone && typeof alertsByZone === 'object') {
+          const zoneLabels = Object.keys(alertsByZone).map(z => `Zone ${String(z).padStart(2, '0')}`);
+          const zoneData = Object.values(alertsByZone);
+          charts.buildAlertsZoneChart('alert-zone-chart', { labels: zoneLabels, data: zoneData });
+        }
+      } catch (error) {
+        console.error('Error loading alerts:', error);
+      }
+    }
+
+    window.generateReport = async function() {
+      try {
+        const summary = await api.fetchAlertsSummary();
+        const status = await api.fetchStatus();
+        const airportCode = status?.airport_code || 'MAA';
+        
+        const report = `
+=================================
+SMARTZONE-R MAINTENANCE REPORT
+=================================
+GENERATED: ${new Date().toLocaleString()}
+AIRPORT: ${airportCode}
+=================================
+CRITICAL ALERTS: ${summary?.critical || 0}
+HIGH ALERTS: ${summary?.high || 0}
+TOTAL ALERTS: ${summary?.total || 0}
+=================================
+STATUS: RUNWAY MONITORING ACTIVE
+Last Update: ${status?.last_update || 'N/A'}
+Database: ${status?.db_connected ? 'OK' : 'ERROR'}
+=================================`;
+
+        const area = document.getElementById('report-area');
+        area.textContent = report;
+        area.style.display = 'block';
+      } catch (error) {
+        console.error('Error generating report:', error);
+      }
+    };
+
+    async function loadAirportCode() {
+      try {
+        const status = await api.fetchStatus();
+        if (status?.airport_code) {
+          document.getElementById('airport-code').textContent = status.airport_code.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error loading airport code:', error);
+      }
+    }
+
+    window.applyThresholds = function() {
+      alert('Thresholds updated');
+      loadAlerts();
+    };
+
+    loadAirportCode();
+    loadAlerts();
+    setInterval(loadAlerts, 15000);
+
+    // Load user info
+    function loadUserInfo() {
+      const username = sessionStorage.getItem('auth_username') || 'User';
+      const role = sessionStorage.getItem('auth_role') || 'viewer';
+      document.getElementById('user-name').textContent = username.toUpperCase();
+      document.getElementById('user-role').textContent = role.toUpperCase();
+    }
+
+    // Logout function
+    function logout() {
+      if (confirm('Log out of SmartZone-R?')) {
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_username');
+        sessionStorage.removeItem('auth_role');
+        window.location.href = '/login';
+      }
+    }
+
+    loadUserInfo();
+  </script>
+  <script src="js/realtime.js"></script>
+</body>
+</html>

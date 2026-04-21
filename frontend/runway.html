@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartZone-R — Runway</title>
+  <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .user-info { font-size: 11px; color: #7ab800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .logout-btn { padding: 6px 12px; border: 2px solid #c8a800; background: transparent; color: #c8a800; font-family: 'B612 Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .logout-btn:hover { background: #c8a800; color: #1a1a0e; }
+    .runway-svg { width: 100%; max-height: 200px; border: 2px solid #3a3820; background: #1f1f12; }
+    .zone-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .metric-box { border: 2px solid #3a3820; background: #1f1f12; padding: 8px; text-align: center; }
+    .metric-label { color: #a09870; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; }
+    .metric-value { color: #c8a800; font-size: 18px; font-weight: 700; }
+    .tab-buttons { display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 2px solid #3a3820; }
+    .tab-btn { padding: 4px 12px; border: none; background: #1f1f12; color: #a09870; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab-btn.active { border-bottom-color: #c8a800; color: #c8a800; }
+  </style>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = sessionStorage.getItem('auth_token');
+      if (!token) window.location.href = '/login';
+    });
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="header-title">SMARTZONE-R</div>
+      <div class="header-airport" id="airport-code">--</div>
+      <span class="header-recording">●</span>
+      <span style="font-size: 10px; color: #a09870;">REC</span>
+    </div>
+    <div class="header-time" id="header-time">14:32:05</div>
+    <div class="header-right">
+      <div class="user-info">
+        <span id="user-role">VIEWER</span> • <span id="user-name">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <nav class="sidebar">
+    <div class="sidebar-title">MENU</div>
+    <ul class="sidebar-nav">
+      <li><a href="index.html" class="nav-item">HOME</a></li>
+      <li><a href="runway.html" class="nav-item active">RUNWAY</a></li>
+      <li><a href="alerts.html" class="nav-item">ALERTS</a></li>
+      <li><a href="analytics.html" class="nav-item">ANALYTICS</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <!-- PANEL 1: RUNWAY DIAGRAM -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">RUNWAY DIAGRAM — 2427M × 45M</span></div>
+      <div class="panel-content" style="padding: 8px; overflow-x: auto;">
+        <svg class="runway-svg" viewBox="0 0 2427 45" preserveAspectRatio="xMidYMin meet">
+          <defs>
+            <linearGradient id="runway-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#0e0e06;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#1a1a0e;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Runway surface -->
+          <rect x="200" y="5" width="2027" height="35" fill="url(#runway-gradient)" stroke="#3a3820" stroke-width="1"/>
+          <!-- Centerline -->
+          <line x1="200" y1="22" x2="2227" y2="22" stroke="#605840" stroke-width="1" stroke-dasharray="40,30"/>
+          <!-- Zones (1-10) -->
+          <g id="zones"></g>
+          <!-- Zone labels -->
+          <text x="310" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z01</text>
+          <text x="510" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z02</text>
+          <text x="710" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z03</text>
+          <text x="910" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z04</text>
+          <text x="1110" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z05</text>
+          <text x="1310" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z06</text>
+          <text x="1510" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z07</text>
+          <text x="1710" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z08</text>
+          <text x="1910" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z09</text>
+          <text x="2110" y="28" font-size="12" fill="#c8a800" font-weight="bold">Z10</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- PANEL 2: ZONE DETAIL -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">ZONE DETAIL</span></div>
+      <div class="panel-content">
+        <div class="tab-buttons" id="zone-tabs"></div>
+        
+        <div>
+          <div style="font-size: 10px; color: #a09870; text-transform: uppercase; margin-bottom: 8px;">METRICS</div>
+          <div class="zone-metrics">
+            <div class="metric-box">
+              <div class="metric-label">STRESS</div>
+              <div class="metric-value" id="m-stress">--</div>
+              <div style="font-size: 9px; color: #a09870;">%</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">RUBBER</div>
+              <div class="metric-value" id="m-rubber">--</div>
+              <div style="font-size: 9px; color: #a09870;">MM</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">CRACKS</div>
+              <div class="metric-value" id="m-cracks">--</div>
+              <div style="font-size: 9px; color: #a09870;">MM</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">WATER</div>
+              <div class="metric-value" id="m-water">--</div>
+              <div style="font-size: 9px; color: #a09870;">MM</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <div style="font-size: 10px; color: #a09870; text-transform: uppercase; margin-bottom: 4px;">FOD</div>
+          <div style="border: 2px solid #3a3820; background: #1f1f12; padding: 4px; overflow: hidden; height: 16px;">
+            <div id="fod-bar" style="background: #c8a800; height: 100%; width: 35%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-keys">
+      <span class="footer-key">[F1:HELP]</span>
+      <span class="footer-key">[F2:RFSH]</span>
+      <span class="footer-key">[F3:EXPRT]</span>
+      <span class="footer-key">[F5:ALRTS]</span>
+      <span class="footer-key">[F9:LOGOUT]</span>
+    </div>
+    <div class="footer-status">
+      <span class="status-item"><span class="status-indicator ok"></span>DB: OK</span>
+      <span class="status-item"><span style="color: #a09870;">RUNWAY 03R/21L</span></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import * as api from './js/api.js';
+
+    let currentZone = new URLSearchParams(window.location.search).get('zone') || '1';
+
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('header-time').textContent = 
+        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }, 1000);
+
+    async function loadZoneDetail(zone) {
+      try {
+        const flights = await api.fetchFlightsForZone(zone);
+        if (flights && flights.length > 0) {
+          const latest = flights[0];
+          document.getElementById('m-stress').textContent = latest.stress.toFixed(1);
+          document.getElementById('m-rubber').textContent = latest.rubber_mm.toFixed(1);
+          document.getElementById('m-cracks').textContent = latest.cracks_mm.toFixed(1);
+          document.getElementById('m-water').textContent = latest.water_mm.toFixed(1);
+          document.getElementById('fod-bar').style.width = (latest.fod_weight_g / 200 * 100) + '%';
+        }
+      } catch (error) {
+        console.error('Error loading zone data:', error);
+      }
+    }
+
+    async function loadAirportCode() {
+      try {
+        const status = await api.fetchStatus();
+        if (status?.airport_code) {
+          document.getElementById('airport-code').textContent = status.airport_code.toUpperCase();
+        }
+      } catch (error) {
+        console.error('Error loading airport code:', error);
+      }
+    }
+
+    async function initZoneTabs() {
+      const tabContainer = document.getElementById('zone-tabs');
+      for (let z = 1; z <= 10; z++) {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${z == currentZone ? 'active' : ''}`;
+        btn.textContent = `ZONE ${String(z).padStart(2, '0')}`;
+        btn.onclick = () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentZone = z;
+          loadZoneDetail(z);
+        };
+        tabContainer.appendChild(btn);
+      }
+      loadZoneDetail(currentZone);
+    }
+
+    loadAirportCode();
+    initZoneTabs();
+
+    // Load user info
+    function loadUserInfo() {
+      const username = sessionStorage.getItem('auth_username') || 'User';
+      const role = sessionStorage.getItem('auth_role') || 'viewer';
+      document.getElementById('user-name').textContent = username.toUpperCase();
+      document.getElementById('user-role').textContent = role.toUpperCase();
+    }
+
+    // Logout function
+    function logout() {
+      if (confirm('Log out of SmartZone-R?')) {
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_username');
+        sessionStorage.removeItem('auth_role');
+        window.location.href = '/login';
+      }
+    }
+
+    loadUserInfo();
+  </script>
+  <script src="js/realtime.js"></script>
+</body>
+</html>
