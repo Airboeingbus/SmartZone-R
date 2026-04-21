@@ -3,318 +3,266 @@
 
 <div align="center">
 
-![SmartZone-R Logo](https://img.shields.io/badge/SmartZone-R-blue?style=for-the-badge&logo=airport&logoColor=white)
+**Real-Time Runway Monitoring System with Role-Based Access Control**
 
-**A Dashboard-Powered Solution for Real-Time Runway Surface Monitoring**
-
-*Optimized for Deployment in Small Airports*
+*FastAPI Backend • WebSocket Real-Time Updates • Retro ATC Aesthetic Dashboard*
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.95+-009485?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![WebSocket](https://img.shields.io/badge/WebSocket-Live-green?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Contributing](#-contributing)
+[Status](#status) • [Features](#features) • [Quick Start](#quick-start) • [API](#api-endpoints) • [Architecture](#architecture)
 
 </div>
 
 ---
 
-## 🎯 Overview
+## Status
 
-**SmartZone-R** is a comprehensive Streamlit-based dashboard designed to monitor runway surface conditions in real time. The system simulates flight landings across multiple runway zones, capturing critical sensor-based metrics to ensure aviation safety and optimize maintenance operations.
-
-### Why SmartZone-R?
-
-- 🛫 **Proactive Maintenance**: Detect runway issues before they become safety hazards
-- 📊 **Data-Driven Decisions**: Leverage analytics to optimize maintenance schedules
-- 💰 **Cost-Effective**: Designed specifically for small airports with limited budgets
-- 🔄 **Real-Time Monitoring**: Continuous tracking of runway conditions
-- 🎨 **Intuitive Dashboard**: Easy-to-use interface for airport operations staff
-
----
-
-## ✨ Features
-
-### 📈 Data Simulation
-- Generates realistic aircraft, weather, and runway metrics
-- Simulates runway degradation across configurable zones
-- Flexible storage options: SQLite database or CSV files
-- Customizable simulation parameters for different runway types
-
-### 📊 Analytics Page
-- **Data Table Preview**: Filter by zone, aircraft type, and time range
-- **Correlation Heatmap**: Assess relationships among runway metrics
-- **Time-Series Trends**: Visualize degradation patterns per zone
-- **Aircraft Impact Analysis**: Analyze stress readings across different aircraft types
-
-### 🗺️ Runway Maps
-- **Visual Mapping**: Average stress, FOD levels, and rubber thickness by zone
-- **Time-Trend Overlays**: Track stress, FOD, and rubber degradation over time
-- **Interactive Plots**: Export visualizations as HTML for reports
-- **Zone-Based Analysis**: Identify high-risk areas on the runway
-
-### 🚨 Alerts Page
-- **Adjustable Thresholds**: Customize limits for stress, rubber, cracks, water, and FOD
-- **Severity Classification**: Normal, Medium, High, Critical alert levels
-- **KPI Overview**: Track records, flagged anomalies, and top alert zones
-- **Detailed Reports**: Downloadable tables in CSV format
-- **Time-Series Tracking**: Alert trends by hour for pattern recognition
-- **Quick Actions**: One-click exports and summary generation
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Dashboard UI** | ✅ Complete | Retro ATC aesthetic with 4 pages (runway, alerts, analytics, runway maps) |
+| **Backend API** | ✅ Complete | FastAPI with 25+ endpoints for data, alerts, hardware monitoring |
+| **Authentication (RBAC)** | ✅ Complete | JWT-based with admin/maintenance/viewer roles |
+| **WebSocket Real-Time** | ✅ Complete | Live runway & alert updates via `/ws/live` |
+| **ESP32 Serial Integration** | 🔄 In Progress | Hardware listener configured, awaiting physical device |
+| **Automated Tests** | ⏳ Pending | Test suite framework ready for implementation |
 
 ---
 
-## 📁 Repository Structure
+## Quick Start
 
-```
-SmartZone-R/
-│
-├── hardware/                 # Hardware components & IoT integration
-│   ├── esp32/               # ESP32 sensor code
-│   └── wokwi/               # Wokwi simulation files
-│
-├── software/                 # Main application code
-│   ├── analytics/           # Data analysis modules
-│   │   ├── analyzer.py      # Core analytics engine
-│   │   └── test_db.py       # Database testing utilities
-│   │
-│   ├── dashboard/           # Streamlit web application
-│   │   ├── pages/           # Multi-page dashboard
-│   │   │   ├── alerts.py    # Alert management page
-│   │   │   ├── analytics.py # Analytics dashboard
-│   │   │   ├── runway_maps.py # Visual runway mapping
-│   │   │   └── __init__.py
-│   │   ├── app.py           # Main application entry
-│   │   ├── utils.py         # Utility functions
-│   │   └── __init__.py
-│   │
-│   ├── data/                # Data storage
-│   │   ├── runway_data.csv  # CSV data export
-│   │   └── smartzone_r.db   # SQLite database
-│   │
-│   └── simulator/           # Data simulation engine
-│       ├── config.py        # Configuration settings
-│       ├── flights.py       # Flight simulation logic
-│       ├── generator.py     # Data generation
-│       └── weather.py       # Weather simulation
-│
-├── tests/                   # Unit and integration tests
-│   └── test_generator.py    # Simulator tests
-│
-├── requirements.txt         # Python dependencies
-├── repo_tree.txt           # Repository structure
-└── README.md               # This file
-```
-
----
-
-## 🚀 Installation
-
-### Prerequisites
-
-- Python 3.8 or higher
-- pip package manager
-- Git
-
-### Step-by-Step Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Airboeingbus/SmartZone-R.git
-   cd SmartZone-R
-   ```
-
-2. **Create a virtual environment** (recommended)
-   ```bash
-   # Linux/Mac
-   python -m venv venv
-   source venv/bin/activate
-   
-   # Windows
-   python -m venv venv
-   venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
----
-
-## 💻 Usage
-
-### Running the Dashboard
-
+### 1. **Clone & Setup**
 ```bash
-cd software/dashboard
-streamlit run app.py
+git clone https://github.com/Airboeingbus/SmartZone-R.git
+cd SmartZone-R
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-The dashboard will be available at: **http://localhost:8501**
-
-### Running the Simulator
-
+### 2. **Configure Environment**
 ```bash
-cd software/simulator
-python generator.py
+# Copy template
+cp .env.example .env
+
+# Edit .env with your configuration
+nano .env
+# Set: JWT_SECRET, ADMIN_PASSWORD, MAINTENANCE_PASSWORD, VIEWER_PASSWORD
 ```
+
+### 3. **Initialize Data**
+```bash
+# Generate initial flight data
+python software/simulator/generator.py --days 7 --output both
+```
+
+### 4. **Run Backend**
+```bash
+cd software && python -c "from backend.main import app; import uvicorn; uvicorn.run(app, host='0.0.0.0', port=8000)"
+```
+
+### 5. **Access Dashboard**
+- Open browser: **http://localhost:8000**
+- Login with credentials from `.env` file
+
+---
+
+## API Endpoints
+
+### Authentication
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/auth/login` | Public | JWT login (returns access + refresh tokens) |
+| `POST` | `/api/auth/refresh` | Public | Refresh access token |
+| `GET` | `/api/auth/me` | Any | Get current user profile |
+
+### Runway Data
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/runway/zones` | viewer | Get all runway zones |
+| `GET` | `/api/runway/zones/{id}` | viewer | Get specific zone data |
+| `GET` | `/api/runway/landing` | viewer | Get landing data |
+| `GET` | `/api/runway/zones/{id}/export` | maintenance | Download zone CSV |
+
+### Alerts
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/alerts` | viewer | Get all alerts |
+| `POST` | `/api/alerts/threshold` | admin | Set alert threshold |
+| `GET` | `/api/alerts/download` | maintenance | Export alerts CSV |
+
+### Hardware Status
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/hardware/status` | viewer | Get sensor status |
+| `GET` | `/api/hardware/serial` | admin | Get serial connection logs |
+
+### WebSocket
+| Endpoint | Role | Description |
+|----------|------|-------------|
+| `GET` | `/ws/live` | viewer | Live runway + alert updates |
+
+### Health Check
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/health` | Public | System health status |
+
+---
+
+## Architecture
+
+### Backend (FastAPI)
+```
+backend/
+├── main.py              # FastAPI app, WebSocket, auth routes
+├── auth.py              # JWT + RBAC (require_role decorator)
+├── database.py          # SQLite connector, context managers
+├── serial_listener.py   # ESP32 serial data daemon
+└── websocket.py         # Live update broadcaster
+```
+
+### Frontend (HTML/CSS + JavaScript)
+```
+frontend/
+├── index.html           # Dashboard home page
+├── runway.html          # Runway pressure/friction visualization
+├── alerts.html          # Alert management & threshold controls
+├── analytics.html       # Historical trends & correlation heatmap
+└── login.html           # JWT authentication UI (retro ATC aesthetic)
+```
+
+### Data Layer
+```
+software/
+├── simulator/
+│   ├── generator.py     # Flight data generation
+│   ├── flights.py       # Aircraft stress modeling
+│   ├── weather.py       # Environmental conditions
+│   └── config.py        # Simulation parameters
+└── data/
+    ├── runway_data.csv  # Flight records
+    └── smartzone_r.db   # SQLite database
+```
+
+### Technology Stack
+- **Framework**: FastAPI (async Python web framework)
+- **Auth**: JWT with RS256 signing
+- **Real-Time**: WebSocket for live updates
+- **Database**: SQLite3 with context manager patterns
+- **Logging**: Python logging module (production-grade)
+- **Frontend**: Vanilla HTML/CSS/JavaScript (no build required)
+
+---
+
+## Role-Based Access Control
+
+### Roles & Permissions
+
+| Role | Permissions |
+|------|-------------|
+| **admin** | Create/modify thresholds, view all alerts, manage system, access hardware logs, force serial reconnect |
+| **maintenance** | Read all data, download/export CSV, view hardware status |
+| **viewer** | Read-only dashboard access, view alerts, no exports |
+
+### Protected Endpoints
+All protected endpoints return **403 INSUFFICIENT CLEARANCE** for unauthorized roles:
+```
+GET    /api/alerts/threshold      → admin only
+POST   /api/alerts/threshold      → admin only
+GET    /api/alerts/download       → maintenance+ 
+GET    /api/hardware/serial       → admin only
+POST   /api/hardware/reconnect    → admin only
+```
+
+---
+
+## Environment Variables
+
+```env
+# JWT Configuration
+JWT_SECRET=your-super-secret-key-min-32-chars
+
+# Role Passwords (use strong values)
+ADMIN_PASSWORD=secure_admin_password
+MAINTENANCE_PASSWORD=secure_maintenance_password
+VIEWER_PASSWORD=secure_viewer_password
+
+# Hardware
+SERIAL_PORT=/dev/ttyUSB0     # ESP32 port (Windows: COM3, etc.)
+
+# Database
+DB_PATH=software/data/smartzone_r.db
+CSV_PATH=software/data/runway_data.csv
+AIRPORT_CODE=KJFK
+```
+
+---
+
+## Development
 
 ### Running Tests
-
 ```bash
-pytest tests/
+pytest tests/ -v
+pytest tests/test_generator.py -v
+```
+
+### Logging
+All modules use Python `logging` with proper levels (INFO, WARNING, ERROR):
+```bash
+# Check logs
+tail -f smartzone_r.log
+```
+
+### Code Quality
+```bash
+# Find any remaining print() calls
+grep -r "print(" . --include="*.py"  # Should be 0
+
+# Check imports
+python -c "from software.simulator.generator import generate_data"
 ```
 
 ---
 
-## 🏗️ Architecture
+## Known Issues
 
-### System Components
-
-```
-┌─────────────────────────────────────────────────────┐
-│                  SmartZone-R System                 │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  ┌──────────────┐      ┌──────────────┐          │
-│  │   Hardware   │      │  Simulator   │          │
-│  │              │─────▶│              │          │
-│  │ ESP32 Sensors│      │ Data Gen     │          │
-│  └──────────────┘      └──────────────┘          │
-│         │                      │                  │
-│         ▼                      ▼                  │
-│  ┌─────────────────────────────────┐             │
-│  │        Data Storage             │             │
-│  │  (SQLite / CSV)                 │             │
-│  └─────────────────────────────────┘             │
-│         │                                         │
-│         ▼                                         │
-│  ┌─────────────────────────────────┐             │
-│  │      Analytics Engine           │             │
-│  │  • Data Processing              │             │
-│  │  • Correlation Analysis         │             │
-│  │  • Alert Generation             │             │
-│  └─────────────────────────────────┘             │
-│         │                                         │
-│         ▼                                         │
-│  ┌─────────────────────────────────┐             │
-│  │    Streamlit Dashboard          │             │
-│  │  • Analytics View               │             │
-│  │  • Runway Maps                  │             │
-│  │  • Alert Management             │             │
-│  └─────────────────────────────────┘             │
-│                                                   │
-└───────────────────────────────────────────────────┘
-```
-
-### Key Technologies
-
-- **Frontend**: Streamlit for interactive web dashboard
-- **Backend**: Python for data processing and analysis
-- **Database**: SQLite for efficient data storage
-- **Visualization**: Plotly, Matplotlib for interactive charts
-- **Hardware**: ESP32 microcontrollers for sensor integration
-- **Testing**: Pytest for automated testing
+| Issue | Status | Notes |
+|-------|--------|-------|
+| ESP32 serial connection | 🔄 In Progress | Requires physical device for testing |
+| Multi-facility support | ⏳ Not Started | Currently designed for single runway |
+| Automated tests | ⏳ Pending | Test infrastructure ready, coverage needed |
+| Data persistence after restart | ✅ Complete | SQLite handles state recovery |
 
 ---
 
-## 📊 Monitored Metrics
+## Security Checklist
 
-| Metric | Description | Alert Threshold |
-|--------|-------------|-----------------|
-| **Rubber Build-up** | Accumulated rubber deposits from tire contact | > 5mm |
-| **Surface Cracking** | Structural integrity of runway surface | > 10% coverage |
-| **Water Accumulation** | Standing water depth | > 3mm |
-| **FOD (Foreign Object Debris)** | Detection of objects on runway | Any detection |
-| **Stress Readings** | Structural stress from aircraft weight | > 85% capacity |
-
----
-
-## 🎨 Dashboard Screenshots
-
-### Analytics Dashboard
-*[Add screenshot of analytics page]*
-
-### Runway Heat Map
-*[Add screenshot of runway maps page]*
-
-### Alert Management
-*[Add screenshot of alerts page]*
+Before deploying to production:
+- [ ] Change all passwords in `.env`
+- [ ] Set `JWT_SECRET` to cryptographically secure 32+ char string
+- [ ] Ensure `.env` is in `.gitignore` (already configured)
+- [ ] Run `grep -r "admin\|maintain\|viewer" . --include="*.html"` → verify no hardcoded defaults
+- [ ] Test `curl http://localhost:8000/health` → verify server running
+- [ ] Test role-based access: `curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/alerts/download` → verify 403 for viewer
 
 ---
 
-## 🤝 Contributing
+## License
 
-We welcome contributions from the community! Here's how you can help:
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit your changes**
-   ```bash
-   git commit -m "Add amazing feature"
-   ```
-4. **Push to the branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. **Open a Pull Request**
-
-### Contribution Guidelines
-
-- Follow PEP 8 style guidelines for Python code
-- Write tests for new features
-- Update documentation as needed
-- Keep commits atomic and well-described
-
----
-
-## 🐛 Bug Reports & Feature Requests
-
-Found a bug or have an idea? Please open an issue on GitHub:
-
-[Report Bug](https://github.com/Airboeingbus/SmartZone-R/issues) | [Request Feature](https://github.com/Airboeingbus/SmartZone-R/issues)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Authors
-
-**Airboeingbus** - *Initial work* - [@Airboeingbus](https://github.com/Airboeingbus)
-
----
-
-## 🙏 Acknowledgments
-
-- Airport operations teams for domain expertise
-- Open-source community for amazing tools and libraries
-- Contributors who help improve SmartZone-R
-
----
-
-## 📧 Contact
-
-For questions, suggestions, or collaboration opportunities:
-
-- **GitHub**: [@Airboeingbus](https://github.com/Airboeingbus)
-- **Project Link**: [SmartZone-R](https://github.com/Airboeingbus/SmartZone-R)
+MIT License - See LICENSE file for details
 
 ---
 
 <div align="center">
 
-**Made with ❤️ for Aviation Safety**
+**Built for Aviation Safety with Real-Time Runway Monitoring**
 
-⭐ Star this repository if you find it helpful!
-
-[Back to Top](#-smartzone-r)
+[GitHub](https://github.com/Airboeingbus/SmartZone-R) | [Issues](https://github.com/Airboeingbus/SmartZone-R/issues)
 
 </div>

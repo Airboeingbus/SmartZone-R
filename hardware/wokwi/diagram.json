@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "author": "SmartZone-R",
+  "title": "Runway Monitoring Sensor System",
+  "description": "ESP32-based runway surface monitoring with DHT22, HC-SR04, and status LEDs",
+  "files": [
+    {
+      "name": "main.ino",
+      "content": ""
+    }
+  ],
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp32",
+      "top": 0,
+      "left": 0,
+      "rotate": 0,
+      "attr": {
+        "env": ""
+      }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht22",
+      "top": 100,
+      "left": 300,
+      "rotate": 0,
+      "attr": {}
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "hcsr04",
+      "top": 220,
+      "left": 300,
+      "rotate": 0,
+      "attr": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led-green",
+      "top": 20,
+      "left": 600,
+      "rotate": 0,
+      "attr": {
+        "color": "green"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led-yellow",
+      "top": 80,
+      "left": 600,
+      "rotate": 0,
+      "attr": {
+        "color": "yellow"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led-red",
+      "top": 140,
+      "left": 600,
+      "rotate": 0,
+      "attr": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-ssd1306",
+      "id": "oled",
+      "top": 260,
+      "left": 600,
+      "rotate": 0,
+      "attr": {}
+    }
+  ],
+  "connections": [
+    [
+      "esp32:4",
+      "dht22:OUT",
+      ""
+    ],
+    [
+      "esp32:5",
+      "hcsr04:TRIG",
+      ""
+    ],
+    [
+      "esp32:18",
+      "hcsr04:ECHO",
+      ""
+    ],
+    [
+      "esp32:2",
+      "led-green:A",
+      ""
+    ],
+    [
+      "esp32:15",
+      "led-yellow:A",
+      ""
+    ],
+    [
+      "esp32:16",
+      "led-red:A",
+      ""
+    ],
+    [
+      "esp32:21",
+      "oled:SDA",
+      ""
+    ],
+    [
+      "esp32:22",
+      "oled:SCL",
+      ""
+    ]
+  ]
+}
