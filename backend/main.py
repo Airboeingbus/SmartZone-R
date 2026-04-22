@@ -96,10 +96,23 @@ async def shutdown_event():
     logger.info("Services stopped")
 
 # Include API route modules FIRST (priority)
-app.include_router(status.router)
-app.include_router(flights.router)
-app.include_router(analytics.router)
-app.include_router(alerts.router)
+# Apply role-based access control to routers
+app.include_router(
+    status.router,
+    dependencies=[Depends(require_role("admin", "maintenance"))]
+)
+app.include_router(
+    flights.router,
+    dependencies=[Depends(require_role("viewer", "maintenance", "admin"))]
+)
+app.include_router(
+    analytics.router,
+    dependencies=[Depends(require_role("viewer", "maintenance", "admin"))]
+)
+app.include_router(
+    alerts.router,
+    dependencies=[Depends(require_role("viewer", "maintenance", "admin"))]
+)
 
 # Authentication Endpoints
 @app.post("/api/auth/login")
@@ -145,9 +158,9 @@ async def health():
         "service": "SmartZone-R API"
     }
 
-# Hardware status endpoint
+# Hardware status endpoint (admin + maintenance only)
 @app.get("/api/hardware/status")
-async def hardware_status():
+async def hardware_status(current_user: dict = Depends(require_role("admin", "maintenance"))):
     """Get ESP32 serial listener status and hardware connection info."""
     status_info = get_listener_status()
     return {

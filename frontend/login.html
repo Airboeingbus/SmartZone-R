@@ -232,7 +232,7 @@
                 .then(response => {
                     if (response.ok) {
                         // Redirect to home
-                        window.location.href = 'index_new.html';
+                        window.location.href = '/index.html';
                     } else {
                         // Clear invalid token
                         sessionStorage.removeItem('auth_token');
@@ -290,7 +290,7 @@
                 );
 
                 // Redirect to home page
-                window.location.href = 'index_new.html';
+                window.location.href = '/index.html';
 
             } catch (err) {
                 errorMsg.textContent = 'ACCESS DENIED - ' + err.message.toUpperCase();

@@ -93,41 +93,46 @@ class ConnectionManager:
         """Build live update message with current zone status and KPIs"""
         try:
             with get_db_connection() as conn:
-                # Get latest readings by zone
+                # Get latest readings by zone from runway_data
                 zones_query = """
-                SELECT zo.zone_id, zo.zone_name,
-                       AVG(rd.stress) as avg_stress,
-                       AVG(rd.rubber_mm) as avg_rubber,
-                       MAX(rd.temperature_C) as max_temp,
-                       MAX(rd.humidity_pct) as max_humidity,
-                       COUNT(*) as reading_count,
-                       COUNT(CASE WHEN rd.anomaly = 1 THEN 1 END) as anomaly_count
-                FROM zones zo
-                LEFT JOIN runway_data rd ON zo.zone_id = rd.zone_id
-                WHERE rd.timestamp > datetime('now', '-1 hour')
-                GROUP BY zo.zone_id, zo.zone_name
-                ORDER BY zo.zone_id
+                SELECT DISTINCT zone FROM runway_data ORDER BY zone
                 """
-                zones = execute_query(zones_query, fetch_all=True)
-
-                # Format zones data
+                zone_ids = execute_query(zones_query, fetch_all=True)
+                
                 zones_status = {}
-                for zone in zones:
-                    zone_dict = dict(zone)
-                    status_str = "NORMAL"
+                for zone_row in zone_ids:
+                    zone_id = zone_row[0] if isinstance(zone_row, tuple) else zone_row.get('zone', 0)
+                    
+                    # Get latest data for this zone
+                    zone_query = """
+                    SELECT zone, 
+                           AVG(stress) as avg_stress,
+                           AVG(rubber_mm) as avg_rubber,
+                           MAX(temperature_C) as max_temp,
+                           COUNT(*) as reading_count,
+                           COUNT(CASE WHEN anomaly = 1 THEN 1 END) as anomaly_count
+                    FROM runway_data
+                    WHERE zone = ? AND timestamp > datetime('now', '-1 hour')
+                    GROUP BY zone
+                    """
+                    zone_data = execute_query(zone_query, (zone_id,), fetch_one=True)
+                    
+                    if zone_data:
+                        zone_dict = dict(zone_data) if not isinstance(zone_data, dict) else zone_data
+                        status_str = "NORMAL"
 
-                    if zone_dict.get("avg_stress", 0) > 80:
-                        status_str = "CRITICAL"
-                    elif zone_dict.get("avg_stress", 0) > 60:
-                        status_str = "WARNING"
-                    elif zone_dict.get("anomaly_count", 0) > 0:
-                        status_str = "ANOMALY"
+                        if zone_dict.get("avg_stress", 0) > 80:
+                            status_str = "CRITICAL"
+                        elif zone_dict.get("avg_stress", 0) > 60:
+                            status_str = "WARNING"
+                        elif zone_dict.get("anomaly_count", 0) > 0:
+                            status_str = "ANOMALY"
 
-                    zones_status[zone_dict["zone_id"]] = {
-                        "name": zone_dict.get("zone_name", f"Zone {zone_dict['zone_id']}"),
-                        "status": status_str,
-                        "avg_stress": round(zone_dict.get("avg_stress", 0), 2),
-                        "avg_rubber": round(zone_dict.get("avg_rubber", 0), 2),
+                        zones_status[zone_id] = {
+                            "name": f"Zone {zone_id}",
+                            "status": status_str,
+                            "avg_stress": round(zone_dict.get("avg_stress", 0), 2),
+                            "avg_rubber": round(zone_dict.get("avg_rubber", 0), 2),
                         "max_temp": zone_dict.get("max_temp", 0),
                         "max_humidity": zone_dict.get("max_humidity", 0),
                         "anomalies": zone_dict.get("anomaly_count", 0),

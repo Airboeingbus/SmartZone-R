@@ -390,7 +390,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const token = sessionStorage.getItem('auth_token');
     if (!token) {
         // Not logged in, redirect to login
-        window.location.href = '/frontend/login.html';
+        window.location.href = '/login.html';
         return;
     }
 
